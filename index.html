@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>Babylon.js sample code</title>
+
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/ammo.js"></script>
+    <script src="https://preview.babylonjs.com/cannon.js"></script>
+    <script src="https://preview.babylonjs.com/Oimo.js"></script>
+    <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var engine = new BABYLON.Engine(canvas, true);
+
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
+        engine.setHardwareScalingLevel(0.4);
+
+        const createScene = () => {
+            const scene = new BABYLON.Scene(engine);
+
+            //const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new BABYLON.Vector3(0, 0, 0));
+            //camera.attachControl(canvas, true);
+
+            //hdr环境贴图
+            var hdrTexture = new BABYLON.CubeTexture.CreateFromPrefilteredData("hdr/environment.env", scene);
+            //hdrTexture.level = 0.5
+            scene.environmentTexture = hdrTexture
+
+            //创建预设天空盒就能让物体受到环境贴图的光照
+            var hdrSkybox = scene.createDefaultSkybox(hdrTexture, true);
+
+            var hdrSkyboxMaterial = hdrSkybox.material
+            hdrSkyboxMaterial.backFaceCulling = false;
+            //hdrSkyboxMaterial.reflectionTexture = hdrTexture
+            //hdrSkyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.EXPLICIT_MODE;
+            //hdrSkyboxMaterial.microSurface = 1.0;
+            //hdrSkyboxMaterial.cameraExposure = 1;
+            //hdrSkyboxMaterial.cameraContrast = 0;
+            hdrSkyboxMaterial.disableLighting = true;
+            hdrSkyboxMaterial.roughness = 0.15;
+            //hdrSkybox.material = hdrSkyboxMaterial;
+            hdrSkybox.infiniteDistance = true;//不可接近
+
+
+
+            //const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0));
+            BABYLON.SceneLoader.Append("mesh/", "shengyiwu.gltf", scene, function (scene) {
+                //Create a default arc rotate camera and light.
+                //scene.createDefaultCameraOrLight(true, false, false);
+               
+                scene.debugLayer.show({ showExplorer: true });//传说中的inspector调试工具
+
+                var mainCamera = new BABYLON.ArcRotateCamera("Camera", 5, -5, 5, new BABYLON.Vector3(-1.5, 1.5, 0), scene);
+
+                mainCamera.setPosition(new BABYLON.Vector3(-5, 5, 3));
+                mainCamera.fov = 1
+                mainCamera.attachControl(canvas, true);
+                mainCamera.wheelPrecision = 50
+                mainCamera.minZ = 0.1
+
+                var mainLight = new BABYLON.HemisphericLight("mainLight", new BABYLON.Vector3(0, 1, 0), scene);
+                //var mainLight = new BABYLON.SpotLight("mainLight", new BABYLON.Vector3(0, 4, 0), new BABYLON.Vector3(0, -1, 0), Math.PI/1.4 , 5, scene);
+                mainLight.diffuse = new BABYLON.Color3(1,1,1)
+                mainLight.intensity = 50
+                //mainLight.biss = 0.1
+                mainLight.specular = new BABYLON.Color3(0.2, 0.2, 0.2);
+                
+                mainLight.groundColor = new BABYLON.Color3(0.4, 0.4, 0.5);
+
+                var tree = scene.getMeshByName("tree")
+                var roughBlack = scene.getMeshByName("roughBlack");
+                var blackWall = scene.getMeshByName("blackWall");
+                var gold = scene.getMeshByName("gold");
+                var white = scene.getMeshByName("white");
+                var emiss = scene.getMeshByName("emiss")
+                var icon = scene.getMeshByName("icon")
+                var tone = scene.getMeshByName("tone")
+
+                mainLight.excludedMeshes = [emiss,tree,icon,tone]
+
+                var roughBlackMat=scene.getMaterialByName("roughBlackMat");
+                var blackWallMat=scene.getMaterialByName("blackWallMat");
+                var goldMat=scene.getMaterialByName("goldMat");
+                var whiteMat=scene.getMaterialByName("whiteMat");
+                var treeMat = scene.getMaterialByName("treeMat");
+                var iconMat = scene.getMaterialByName("iconMat")
+                var toneMat = scene.getMaterialByName("toneMat")
+                var emissMat = scene.getMaterialByName("emissMat")
+
+
+                emissMat.emissiveColor =new BABYLON.Color3(1,0.7,0.4)
+                emissMat.emissiveIntensity = 0.5
+                roughBlackMat.albedoColor= new BABYLON.Color3(0.006,0.006,0.006)
+                roughBlackMat.roughness = 0.3
+                treeMat.emissiveColor =new BABYLON.Color3(0.2,0.2,0.3)
+                treeMat.emissiveIntensity = 0.6
+                blackWallMat.albedoColor = new BABYLON.Color3(0.03,0.03,0.03)
+                blackWallMat.roughness = 0.3
+                whiteMat.albedoColor = new BABYLON.Color3(0.08,0.08,0.08)
+                iconMat.albedoColor = new BABYLON.Color3(0,0,0)
+                iconMat.environmentIntensity = 0
+                goldMat.metallic=0.9
+                goldMat.roughness=0.2
+                toneMat.albedoColor = new BABYLON.Color3(0,0,0)
+                toneMat.environmentIntensity = 0.3
+
+                
+
+
+
+                roughBlackMat.lightmapTexture = new BABYLON.Texture("mesh/textures/roughBlackLightMap.jpg", scene,false,false);
+                roughBlackMat.lightmapTexture.coordinatesIndex = 1;
+                roughBlackMat.useLightmapAsShadowmap = true;
+
+                blackWallMat.lightmapTexture = new BABYLON.Texture("mesh/textures/blackWallLightMap.jpg", scene,false,false);
+                blackWallMat.lightmapTexture.coordinatesIndex = 1;
+                blackWallMat.useLightmapAsShadowmap = true;
+
+                goldMat.lightmapTexture = new BABYLON.Texture("mesh/textures/goldLightMap.jpg", scene,false,false);
+                goldMat.lightmapTexture.coordinatesIndex = 1;
+                goldMat.useLightmapAsShadowmap = true;
+
+                whiteMat.lightmapTexture = new BABYLON.Texture("mesh/textures/whiteLightMap.jpg", scene,false,false);
+                whiteMat.lightmapTexture.coordinatesIndex = 1;
+                whiteMat.useLightmapAsShadowmap = true;
+
+
+
+
+                
+
+
+
+                // Create SSAO and configure all properties (for the example)
+                var ssaoRatio = {
+                    ssaoRatio: 2, // Ratio of the SSAO post-process, in a lower resolution
+                    combineRatio: 1 // Ratio of the combine post-process (combines the SSAO and the scene)
+                };
+                var ssao = new BABYLON.SSAORenderingPipeline("ssao", scene, ssaoRatio);
+                ssao.fallOff = 0.0001;
+                ssao.area = 1;
+                ssao.radius = 0.002;
+                ssao.totalStrength = 0.4;
+                ssao.base = 0.3;
+
+                //ssao.expensiveBlur=true;
+
+                // Attach camera to the SSAO render pipeline
+                scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao", mainCamera);
+
+                var ssao = new BABYLON.SSAORenderingPipeline("ssao", scene, ssaoRatio);
+                ssao.fallOff = 0.00001;
+                ssao.area = 1;
+                ssao.radius = 0.02;
+                ssao.totalStrength = 0.2;
+                ssao.base = 0.1;
+
+                /*
+                   // Manage SSAO
+                   var isAttached = true;
+                    window.addEventListener("keydown", function (evt) {
+                    // draw SSAO with scene when pressed "1"
+                    if (evt.keyCode === 49) {
+                        if (!isAttached) {
+                            isAttached = true;
+                            scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao", mainCamera);
+                        }
+                        scene.postProcessRenderPipelineManager.enableEffectInPipeline("ssao", ssao.SSAOCombineRenderEffect, mainCamera);
+                    }
+                        // draw without SSAO when pressed "2"
+                    else if (evt.keyCode === 50) {
+                        isAttached = false;
+                        scene.postProcessRenderPipelineManager.detachCamerasFromRenderPipeline("ssao", mainCamera);
+                    }
+                        // draw only SSAO when pressed "2"
+                    else if (evt.keyCode === 51) {
+                        if (!isAttached) {
+                            isAttached = true;
+                            scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao", mainCamera);
+                        }
+                        scene.postProcessRenderPipelineManager.disableEffectInPipeline("ssao", ssao.SSAOCombineRenderEffect, mainCamera);
+                    }
+                    });
+                */
+
+
+                //辉光层
+                var gl = new BABYLON.GlowLayer("gl", scene, {
+
+                    mainTextureFixedSize: 1024,//贴图大小
+                    blurKernelSize: 8//模糊大小
+
+
+                })
+                gl.intensity = 1
+
+
+                
+                //抗锯齿，感觉没效果
+                var defaultPipeline = new BABYLON.DefaultRenderingPipeline("default", false, scene, [scene.activeCamera]);
+                defaultPipeline.fxaaEnabled = true;//抗锯齿
+                defaultPipeline.imageProcessing.contrast = 1.0;//全局对比度
+                defaultPipeline.samples = 1;//不知道为什么只能填1，0都不行
+                new BABYLON.FxaaPostProcess("fxaa", 2.0, mainCamera);//双重抗锯齿，感觉有效果了
+
+                // The default camera looks at the back of the asset.
+                // Rotate the camera by 180 degrees to the front of the asset.
+                //scene.activeCamera.alpha += Math.PI;
+            });
+
+
+
+
+
+
+
+            return scene;
+        }
+        window.initFunction = async function () {
+            var asyncEngineCreation = async function () {
+                try {
+                    return createDefaultEngine();
+                } catch (e) {
+                    console.log("the available createEngine function failed. Creating the default engine instead");
+                    return createDefaultEngine();
+                }
+            }
+
+            window.engine = await asyncEngineCreation();
+            if (!engine) throw 'engine should not be null.';
+            window.scene = createScene();
+        };
+        initFunction().then(() => {
+            sceneToRender = scene
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>
